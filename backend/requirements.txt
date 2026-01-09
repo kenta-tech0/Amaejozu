@@ -1,0 +1,77 @@
+# FastAPI Core - Web Framework
+fastapi[standard]==0.128.0       
+pydantic==2.12.5                 
+pydantic-settings==2.7.0         
+pydantic-extra-types==2.10.3     
+
+# ASGI Server (if not using fastapi[standard])
+# uvicorn[standard]==0.40.0      
+
+# Database - MySQL with Async Support
+sqlalchemy[asyncio]==2.0.45      
+aiomysql==0.2.0                  
+alembic==1.17.2                  
+cryptography==44.0.0             
+
+# Alternative sync driver (if needed)
+# pymysql==1.1.1                 
+
+# Async Support
+aiofiles==24.1.0                 
+asyncio-mqtt==0.16.2             
+
+# HTTP Client - For External APIs
+httpx==0.28.1                    
+# requests==2.32.3               
+
+# Azure Services
+# Azure OpenAI / ChatGPT Integration
+openai==2.14.0                   
+azure-identity==1.21.0           
+azure-core==1.32.0               
+
+# Azure Storage (if needed for file storage)
+# azure-storage-blob==12.24.0    # Blob storage client
+
+# Email Service
+resend==2.19.0                   
+# sendgrid==6.11.0               
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0 
+passlib[bcrypt]==1.7.4           
+python-multipart==0.0.20         
+bcrypt==4.2.1                    
+
+# Environment & Configuration
+python-dotenv==1.0.1             
+
+# Task Scheduling
+apscheduler==3.10.4              
+# celery[redis]==5.4.0           
+
+# Data Validation & Processing
+email-validator==2.2.0           
+python-dateutil==2.9.0           
+pytz==2024.2                     
+
+# Logging & Monitoring
+loguru==0.7.3                    
+# sentry-sdk[fastapi]==2.19.2    
+
+# Utilities
+tenacity==9.0.0                  
+pyyaml==6.0.2                    
+
+# Development & Testing (Move to requirements-dev.txt in production)
+pytest==8.3.4                    
+pytest-asyncio==0.24.0           
+pytest-cov==6.0.0                
+pytest-mock==3.14.0              
+# httpx-mock==0.15.0             
+
+# Code Quality Tools
+black==24.10.0                   
+ruff==0.8.4                     
+mypy==1.13.0                     
+

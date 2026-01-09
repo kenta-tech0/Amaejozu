@@ -1,0 +1,113 @@
+services:
+  # フロントエンド (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cosmetics-price-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_APP_NAME=価格比較
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    command: npm run dev
+    restart: unless-stopped
+
+  # バックエンド (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cosmetics-price-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      # DigiCert証明書（本番環境用）
+      # - ./DigiCertGlobalRootG2.crt.pem:/usr/local/share/ca-certificates/DigiCertGlobalRootG2.crt:ro
+    environment:
+      - DATABASE_URL=mysql+pymysql://app_user:app_password@db:3306/cosmetics_price_db
+      - RAKUTEN_API_KEY=${RAKUTEN_API_KEY}
+      # Azure OpenAI
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      # Email
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  # データベース (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: cosmetics-price-db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=cosmetics_price_db
+      - MYSQL_USER=app_user
+      - MYSQL_PASSWORD=app_password
+      - TZ=Asia/Tokyo
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # バックグラウンドワーカー（価格更新・通知処理用）
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cosmetics-price-worker
+    volumes:
+      - ./backend:/app
+      # DigiCert証明書（本番環境用）
+      # - ./DigiCertGlobalRootG2.crt.pem:/usr/local/share/ca-certificates/DigiCertGlobalRootG2.crt:ro
+    environment:
+      - DATABASE_URL=mysql+pymysql://app_user:app_password@db:3306/cosmetics_price_db
+      - RAKUTEN_API_KEY=${RAKUTEN_API_KEY}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: python worker.py
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
