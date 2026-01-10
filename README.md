@@ -108,6 +108,23 @@ Amaejozu/
 ├── .gitignore                        # Git除外設定
 └── README.md                         # プロジェクトドキュメント
 ```
+## GitHub運用ルール
+- IssueとPRを紐づける（説明のところに、**Closes #<紐付けたいIssueの番号>**と書くことで、PRとIssueを紐付けることができます。）
+- PRの相互レビューを行う
+- ローカル環境で動作確認後に承認/マージを行う
+
+## ブランチ命名規則
+### フォーマット
+`<type>/#<issue番号>-<brief-description>`
+
+### 例
+- `feature/#17-add-watchlist-api`
+- `fix/#25-notification-email-bug`
+
+### ワークフロー
+1. 作業 → add → commit → push
+2. PRを作成して Closes #XX を記載
+3. レビュー → マージ
 
 ## 開発環境のセットアップ
 
@@ -136,6 +153,13 @@ cd Amaejozu
 cp .env.example .env
 ```
 
+**SECRET_KEYの生成:**
+```bash
+# ランダムな秘密鍵を生成（Python必須）
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+# 出力例: FipRWrIIDwLw3p8YFvpRtj5ISMcZ94gEotmjuQqGJKI
+```
+
 `.env` ファイルを編集して以下の値を設定：
 
 ```env
@@ -151,11 +175,15 @@ AZURE_OPENAI_API_VERSION=2024-07-18-preview
 # Resend（メール通知）これは仮なのでスルーしてください！！
 RESEND_API_KEY=your_resend_api_key_here
 
+# Security（JWT認証用の秘密鍵）
+# 以下のコマンドで生成できます:
+#   python -c "import secrets; print(secrets.token_urlsafe(32))"
+# 開発環境: 任意の32文字以上のランダム文字列
+# 本番環境: 必ず強固なランダム文字列に変更してください
+SECRET_KEY=your-secret-key-change-this-in-production
+
 # Database（開発環境ではデフォルト値で問題ありません）
 DATABASE_URL=mysql+pymysql://app_user:app_password@db:3306/cosmetics_price_db
-
-# Security
-SECRET_KEY=your-secret-key-change-this-in-production
 
 # Frontend
 NEXT_PUBLIC_API_ENDPOINT=http://localhost:8000
@@ -174,16 +202,15 @@ docker-compose logs -f
 #### 4. データベースマイグレーションの実行（初回のみ）
 
 ```bash
-# バックエンドコンテナに入る
-docker-compose exec backend bash
+# マイグレーションを適用（コンテナに入らずに実行可能）
+docker-compose exec backend alembic upgrade head
 
-# 初回マイグレーションを作成して適用
-alembic revision --autogenerate -m "Initial migration"
-alembic upgrade head
-
-# コンテナから抜ける
-exit
+# ✅ マイグレーション完了確認
+docker-compose exec backend alembic current
+# 出力例: 11e02588c898 (head)
 ```
+
+**注意**: マイグレーションファイルは既にリポジトリに含まれているため、`alembic revision`コマンドは不要です。`alembic upgrade head`のみで全てのテーブルが作成されます。
 
 #### 5. アプリケーションへのアクセス
 
@@ -248,34 +275,47 @@ mypy .
 
 ### データベースマイグレーション（Alembic）
 
+#### マイグレーション履歴の確認
+
 ```bash
-# コンテナに入る
-docker-compose exec backend bash
-
-# 初回マイグレーションの作成
-alembic revision --autogenerate -m "Initial migration"
-
-# マイグレーションの適用
-alembic upgrade head
-
 # マイグレーション履歴の確認
-alembic history
+docker-compose exec backend alembic history
 
 # 現在のバージョン確認
-alembic current
+docker-compose exec backend alembic current
+```
 
-# マイグレーションのロールバック（1つ前に戻す）
-alembic downgrade -1
+#### モデル変更時の新規マイグレーション作成
+
+```bash
+# 1. app/models/*.py を編集してモデルを変更
+
+# 2. コンテナに入る
+docker-compose exec backend bash
+
+# 3. 変更を自動検出してマイグレーションファイル生成
+alembic revision --autogenerate -m "Add new column to user table"
+
+# 4. 生成されたファイル（alembic/versions/xxx_*.py）を確認・編集
+
+# 5. マイグレーションを適用
+alembic upgrade head
+
+# 6. コンテナから抜ける
+exit
+```
+
+#### マイグレーションのロールバック
+
+```bash
+# 1つ前のバージョンに戻す
+docker-compose exec backend alembic downgrade -1
 
 # 特定バージョンにロールバック
-alembic downgrade <revision_id>
+docker-compose exec backend alembic downgrade <revision_id>
 
-# モデル変更後の新規マイグレーション作成
-# 1. app/models/*.py を編集
-# 2. 以下のコマンドで自動検出・マイグレーション生成
-alembic revision --autogenerate -m "Add new column to user table"
-# 3. 生成されたファイルを確認後、適用
-alembic upgrade head
+# 全てロールバック（初期状態に戻す）
+docker-compose exec backend alembic downgrade base
 ```
 
 ### フロントエンド開発
