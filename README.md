@@ -290,3 +290,22 @@ npm run dev
 # ビルド
 npm run build
 ```
+### 開発運用ルール
+- IssueとPRを紐づける（説明のところにCloses #<紐付けたいIssueの番号>と書くことで、プルリクエストとIssueを紐付けることができます）
+- PR相互レビューをする（基本的には他の人がレビューする）
+- ローカル動作が確認にできたら承認・マージ
+
+### ブランチルール
+- 作業を始める前に最新のmainブランチをフェッチ/プルする
+- 命名規則
+  - feature  → 新機能追加
+  - fix      → バグ修正
+  - refactor → リファクタリング
+  - docs     → ドキュメントのみ変更
+  - chore    → 環境設定・ビルド関連
+ 
+- フォーマット
+  - `<type>/#<issue番号>-<brief-description>`
+- 例
+  - `feature/#17-add-watchlist-api`
+  - `fix/#25-notification-email-bug`
