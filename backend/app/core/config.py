@@ -4,26 +4,16 @@ Application configuration management
 """
 
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
     """Application settings from environment variables"""
 
     # Database
-    DATABASE_URL: str = "mysql+aiomysql://app_user:app_password@db:3306/cosmetics_price_db"
+    DATABASE_URL: str = "mysql+aiomysql://app_user:app_password@db:3306/speaking_practice_db"
 
-    # API Keys
-    RAKUTEN_API_KEY: str
-
-    # Azure OpenAI
-    AZURE_OPENAI_API_KEY: str
-    AZURE_OPENAI_ENDPOINT: str
-    AZURE_OPENAI_DEPLOYMENT_NAME: str = "gpt-4o-mini"
-    AZURE_OPENAI_API_VERSION: str = "2024-07-18-preview"
-
-    # Email Service
-    RESEND_API_KEY: str
+    # Anthropic Claude API
+    ANTHROPIC_API_KEY: str = ""
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-this-in-production"
@@ -34,7 +24,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000"
 
     # Application
-    APP_NAME: str = "Amaejozu - 化粧品価格比較"
+    APP_NAME: str = "SpeakEasy - English Speaking Practice"
     DEBUG: bool = True
 
     class Config:
